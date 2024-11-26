@@ -116,4 +116,11 @@ def start_blasting():
                 tombol_kirim.click()
                 sent_numbers.append(nomor)
                 last_sent_index += 1
-            except Exception as
+                
+     try:
+    # kode yang mungkin menyebabkan error
+except Exception as e:
+    print(f"An error occurred: {e}")
+
+    except Exception:
+    print("An error occurred")
