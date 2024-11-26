@@ -1,39 +1,11 @@
-# Gunakan base image Debian
-FROM debian:bookworm-slim
+# Gunakan base image yang sudah terinstal Google Chrome
+FROM selenium/standalone-chrome:latest
 
 # Set direktori kerja
 WORKDIR /app
 
-# Tambahkan dependensi dasar
-RUN apt-get update && apt-get install -y \
-    wget \
-    curl \
-    gnupg \
-    ca-certificates \
-    fonts-liberation \
-    libasound2 \
-    libnss3 \
-    libx11-dev \
-    libxcomposite-dev \
-    libxrandr-dev \
-    libgtk-3-0 \
-    xdg-utils \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Tambahkan kunci GPG dan repositori Google Chrome
-RUN mkdir -p /etc/apt/keyrings \
-    && curl -fsSL https://dl.google.com/linux/linux_signing_key.pub -o /etc/apt/keyrings/google-chrome.gpg \
-    && chmod 644 /etc/apt/keyrings/google-chrome.gpg \
-    && echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
-
-# Instal Google Chrome
-RUN apt-get update && apt-get install -y google-chrome-stable \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
 # Salin aplikasi ke dalam container
 COPY . /app
 
-# Jalankan aplikasi
-CMD ["echo", "Google Chrome berhasil diinstal!"]
+# Jalankan aplikasi atau skrip Anda
+CMD ["echo", "Google Chrome sudah terinstal dan siap digunakan!"]
