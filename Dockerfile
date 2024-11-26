@@ -1,14 +1,15 @@
-# Gunakan base image Debian slim
+# Gunakan base image Debian
 FROM debian:bookworm-slim
 
 # Set direktori kerja
 WORKDIR /app
 
-# Instal dependensi dasar
+# Tambahkan dependensi dasar
 RUN apt-get update && apt-get install -y \
     wget \
     curl \
     gnupg \
+    ca-certificates \
     fonts-liberation \
     libasound2 \
     libnss3 \
@@ -20,7 +21,7 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Tambahkan keyring untuk repositori Google Chrome
+# Tambahkan kunci GPG dan repositori Google Chrome
 RUN mkdir -p /etc/apt/keyrings \
     && curl -fsSL https://dl.google.com/linux/linux_signing_key.pub -o /etc/apt/keyrings/google-chrome.gpg \
     && chmod 644 /etc/apt/keyrings/google-chrome.gpg \
