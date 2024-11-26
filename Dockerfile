@@ -1,51 +1,40 @@
-# Gunakan image Python versi 3.10
+# Gunakan image base Python
 FROM python:3.10-slim
 
-# Instal dependensi sistem yang diperlukan untuk membangun numpy dan pustaka terkait
+# Instal dependensi untuk Chrome dan ChromeDriver
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    libatlas-base-dev \
-    gfortran \
-    gcc \
     wget \
     unzip \
-    libglib2.0-0 \
-    libnss3 \
+    curl \
+    ca-certificates \
+    fonts-liberation \
+    libappindicator3-1 \
     libgdk-pixbuf2.0-0 \
     libnspr4 \
+    libnss3 \
+    libxss1 \
+    libx11-xcb1 \
+    libgbm1 \
     && rm -rf /var/lib/apt/lists/*
 
+# Download dan install Google Chrome
+RUN curl -sS https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -o google-chrome.deb
+RUN dpkg -i google-chrome.deb
+RUN apt-get -y --fix-broken install
+
 # Install ChromeDriver
-RUN wget https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip -O /tmp/chromedriver.zip \
-    && unzip /tmp/chromedriver.zip -d /usr/local/bin/ \
-    && chmod +x /usr/local/bin/chromedriver
-
-# Verifikasi instalasi ChromeDriver
-RUN chromedriver --version
-
-# Setel direktori kerja di dalam container
-WORKDIR /app
-
-# Salin file requirements.txt ke dalam container
-COPY requirements.txt /app/
-
-# Perbarui pip, setuptools, dan wheel
-RUN pip install --upgrade pip setuptools wheel
+RUN wget https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip
+RUN unzip chromedriver_linux64.zip
+RUN mv chromedriver /usr/local/bin/
+RUN chmod +x /usr/local/bin/chromedriver
 
 # Instal dependensi Python
-RUN pip install --no-cache-dir -r requirements.txt
+WORKDIR /app
+COPY requirements.txt /app/
+RUN pip install -r requirements.txt
 
-# Salin kode aplikasi lainnya ke dalam container
+# Copy aplikasi Anda
 COPY . /app/
 
 # Tentukan perintah untuk menjalankan aplikasi
 CMD ["python", "app.py"]
-
-# Expose port untuk aplikasi
-EXPOSE 5000
-
-# Gunakan Gunicorn untuk menjalankan aplikasi Flask dan pastikan mendengarkan pada port yang benar
-CMD ["sh", "-c", "gunicorn -w 4 -b 0.0.0.0:5000 app:app"]
-
-RUN echo "PORT IS: $PORT"
-
