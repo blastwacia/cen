@@ -28,6 +28,7 @@ sent_numbers = []
 failed_numbers = []
 last_sent_index = 0
 driver = None
+chrome_installed = False  # Flag untuk melacak status instalasi Chrome
 
 # Fungsi untuk memeriksa ekstensi file yang di-upload
 def allowed_file(filename):
@@ -61,35 +62,37 @@ def upload_file():
 
 @app.route("/login", methods=["GET"])
 def login_whatsapp():
-    global driver
-    try:
-        # Menginisialisasi WebDriver
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")  # Jalankan Chrome tanpa antarmuka
-        chrome_options.add_argument("--disable-gpu")  # Nonaktifkan GPU rendering
-        chrome_options.add_argument("--no-sandbox")  # Nonaktifkan sandbox untuk kompatibilitas
-        chrome_options.binary_location = "/usr/bin/google-chrome"  # Lokasi Chrome di server Render
+    global driver, chrome_installed
+    if not chrome_installed:
+        print("Google Chrome sudah terinstal dan siap digunakan!")
+        chrome_installed = True
 
-        service = Service(executable_path="/usr/local/bin/chromedriver")  # Lokasi ChromeDriver di server Render
-        driver = webdriver.Chrome(service=service, options=chrome_options)
-        
-        driver.get("https://web.whatsapp.com")
-        WebDriverWait(driver, 120).until(EC.presence_of_element_located((By.XPATH, "//div[@id='app']")))
+        try:
+            # Inisialisasi WebDriver untuk Chrome
+            chrome_options = Options()
+            chrome_options.add_argument("--headless")  # Jalankan Chrome tanpa antarmuka
+            chrome_options.add_argument("--disable-gpu")  # Nonaktifkan GPU rendering
+            chrome_options.add_argument("--no-sandbox")  # Nonaktifkan sandbox untuk kompatibilitas
+            chrome_options.binary_location = "/usr/bin/google-chrome"  # Lokasi Chrome di server Render
 
-        # Menyimpan gambar QR code
-        qr_code_element = WebDriverWait(driver, 120).until(
-            EC.presence_of_element_located((By.XPATH, "//img[@alt='Scan me!']"))
-        )
-        qr_code_url = qr_code_element.get_attribute("src")
+            service = Service(executable_path="/usr/local/bin/chromedriver")  # Lokasi ChromeDriver di server Render
+            driver = webdriver.Chrome(service=service, options=chrome_options)
 
-        # Menyimpan gambar QR ke dalam folder static
-        qr_code_path = os.path.join('static', 'qr_code.png')
-        driver.get(qr_code_url)
-        driver.save_screenshot(qr_code_path)
+            # Membuka URL
+            driver.get("https://cen-4y4c.onrender.com/")  # Link yang dimaksud
+            sleep(5)  # Tunggu beberapa detik untuk memastikan halaman dimuat
 
-        return jsonify({"status": "success", "message": "QR Code is shown, scan to login.", "qr_code": qr_code_path})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e), "traceback": traceback.format_exc()})
+            # Jika perlu, Anda dapat menambahkan logika lebih lanjut untuk memulai proses blast
+            # Misalnya, Anda dapat menemukan elemen di halaman tersebut untuk memulai aksi tertentu
+            # WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "xpath_to_button"))).click()
+
+            return jsonify({"status": "success", "message": "Opened the URL and ready to start blasting."})
+
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e), "traceback": traceback.format_exc()})
+
+    else:
+        return jsonify({"status": "error", "message": "Google Chrome is not installed yet!"})
 
 @app.route("/start", methods=["POST"])
 def start_blasting():
@@ -141,6 +144,3 @@ def start_blasting():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)
-
-print("Chrome binary location:", os.popen('which google-chrome').read())
-print("ChromeDriver location:", os.popen('which chromedriver').read())
