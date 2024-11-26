@@ -1,27 +1,28 @@
 FROM python:3.10-slim
 
-# Install dependencies
+# Install dependencies and Google Chrome
 RUN apt-get update && apt-get install -y \
-    wget \
     curl \
-    unzip \
-    ca-certificates \
-    fontconfig \
+    wget \
     libx11-dev \
-    libxrender1 \
-    libxtst6 \
-    libxi6 \
-    libgdk-pixbuf2.0-0 \
+    libxcomposite-dev \
+    libxrandr-dev \
+    libgtk-3-0 \
     libnss3 \
     libasound2 \
-    libatk1.0-0 \
-    libatk-bridge2.0-0 \
-    libgtk-3-0 \
-    google-chrome-stable
+    fonts-liberation \
+    xdg-utils \
+    && wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -O google-chrome-stable_current_amd64.deb \
+    && dpkg -i google-chrome-stable_current_amd64.deb \
+    && apt-get -y --fix-broken install
 
 # Install ChromeDriver
-RUN wget -q -O - https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip | \
-    unzip -d /usr/local/bin
+RUN wget https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip && \
+    unzip chromedriver_linux64.zip -d /usr/local/bin
 
-# Set the environment variable for Chrome binary location
-ENV CHROME_BIN="/usr/bin/google-chrome-stable"
+# Install required Python packages
+COPY requirements.txt /app/requirements.txt
+RUN pip install -r /app/requirements.txt
+
+# Set work directory
+WORKDIR /app
