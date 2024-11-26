@@ -19,11 +19,10 @@ UPLOAD_FOLDER = "uploads"
 ALLOWED_EXTENSIONS = {"csv"}
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
-# Cek jika folder uploads ada, jika tidak buat folder
 if not os.path.exists(UPLOAD_FOLDER):
     os.mkdir(UPLOAD_FOLDER)
 
-# Variabel global
+# Global Variables
 sent_numbers = []
 failed_numbers = []
 last_sent_index = 0
@@ -31,22 +30,18 @@ driver = None
 
 # Helper functions
 def allowed_file(filename):
-    """Memastikan file yang diupload memiliki ekstensi yang sesuai (csv)."""
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def is_valid_number(nomor):
-    """Validasi nomor telepon dengan format +62 dan panjang 8-15 digit setelah kode negara."""
     pattern = r'^\+62\d{8,15}$'
     return re.match(pattern, nomor) is not None
 
 @app.route("/")
 def index():
-    """Halaman utama."""
     return render_template("index.html")
 
 @app.route("/upload", methods=["POST"])
 def upload_file():
-    """Fungsi untuk mengupload file CSV."""
     if "file" not in request.files:
         return jsonify({"status": "error", "message": "No file part in request."}), 400
 
@@ -57,7 +52,6 @@ def upload_file():
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         file_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-        print(f"Saving file to: {file_path}")  # Log debugging untuk memastikan lokasi file disimpan
         file.save(file_path)
         return jsonify({"status": "success", "message": f"File {filename} uploaded successfully.", "file_path": file_path})
     else:
@@ -65,20 +59,23 @@ def upload_file():
 
 @app.route("/login", methods=["GET"])
 def login_whatsapp():
-    """Login ke WhatsApp Web dan ambil QR code untuk login."""
     global driver
     try:
-        # Inisialisasi WebDriver
+        # Initialize WebDriver
         chrome_options = Options()
-        chrome_options.add_argument("--headless")  # Mode tanpa tampilan GUI
-        service = Service(executable_path="chromedriver")  # Sesuaikan dengan path chromedriver
+        chrome_options.add_argument("--headless")  # Jalankan Chrome tanpa antarmuka
+        chrome_options.add_argument("--disable-gpu")  # Nonaktifkan GPU rendering
+        chrome_options.add_argument("--no-sandbox")  # Nonaktifkan sandbox untuk kompatibilitas
+        chrome_options.binary_location = "/usr/bin/google-chrome"  # Lokasi Chrome di server Render
+
+        service = Service(executable_path="/usr/local/bin/chromedriver")  # Lokasi ChromeDriver di server Render
         driver = webdriver.Chrome(service=service, options=chrome_options)
         
         driver.get("https://web.whatsapp.com")
         WebDriverWait(driver, 120).until(EC.presence_of_element_located((By.XPATH, "//div[@id='app']")))
 
-        # Ambil screenshot QR code untuk login
-        qr_code_path = 'static/qr_code.png'  # Path untuk menyimpan gambar QR
+        # Generate QR code image path
+        qr_code_path = 'static/qr_code.png'  # Path untuk QR Code
         driver.save_screenshot(qr_code_path)
         
         return jsonify({"status": "success", "message": "QR Code is shown, scan to login.", "qr_code": qr_code_path})
@@ -87,7 +84,6 @@ def login_whatsapp():
 
 @app.route("/start", methods=["POST"])
 def start_blasting():
-    """Mulai mengirim pesan WhatsApp secara berurutan."""
     global sent_numbers, failed_numbers, last_sent_index, driver
     if not request.is_json:
         return jsonify({"status": "error", "message": "Request must be in JSON format."}), 400
@@ -96,20 +92,15 @@ def start_blasting():
     file_path = request_data.get("file_path")
     message_template = request_data.get("message", "").strip()
 
-    print(f"Received file path: {file_path}")  # Log debugging untuk memastikan file path yang diterima
-
-    # Verifikasi path file dan keberadaannya
     if not file_path or not os.path.exists(file_path):
         return jsonify({"status": "error", "message": "Uploaded file not found."}), 400
     if not message_template:
         return jsonify({"status": "error", "message": "Message cannot be empty."}), 400
 
     try:
-        # Baca file CSV dan pastikan kolom "NO HANDPHONE" ada
         data = pd.read_csv(file_path, dtype={"NO HANDPHONE": str}).dropna(subset=["NO HANDPHONE"])
-        print("File loaded successfully.")  # Debugging log untuk memastikan file CSV berhasil dibaca
+        data["NO HANDPHONE"] = data["NO HANDPHONE"].apply(lambda x: x.strip())
 
-        # Proses setiap nomor yang ada pada file CSV
         for index, row in data.iloc[last_sent_index:].iterrows():
             nomor = row["NO HANDPHONE"]
             if not is_valid_number(nomor):
@@ -130,14 +121,12 @@ def start_blasting():
                 sent_numbers.append(nomor)
                 last_sent_index += 1
             except Exception as e:
-                print(f"Error when sending message to {nomor}: {e}")
                 failed_numbers.append(nomor)
+                continue
 
-        return jsonify({"status": "success", "message": "Blast finished!"})
-
+        return jsonify({"status": "success", "message": "Messages sent successfully."})
     except Exception as e:
-        print(f"An error occurred: {e}")
-        return jsonify({"status": "error", "message": f"Failed to process the file: {e}"}), 500
+        return jsonify({"status": "error", "message": f"An error occurred: {str(e)}"})
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    app.run(debug=True)
