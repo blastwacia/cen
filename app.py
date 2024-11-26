@@ -141,3 +141,7 @@ def start_blasting():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)
+
+print("Chrome binary location:", os.popen('which google-chrome').read())
+print("ChromeDriver location:", os.popen('which chromedriver').read())
+
