@@ -1,41 +1,27 @@
-# Gunakan image base Python
 FROM python:3.10-slim
 
-# Instal dependensi untuk Chrome dan ChromeDriver
+# Install dependencies
 RUN apt-get update && apt-get install -y \
     wget \
-    unzip \
     curl \
+    unzip \
     ca-certificates \
-    fonts-liberation \
-    libappindicator3-1 \
+    fontconfig \
+    libx11-dev \
+    libxrender1 \
+    libxtst6 \
+    libxi6 \
     libgdk-pixbuf2.0-0 \
-    libnspr4 \
     libnss3 \
-    libxss1 \
-    libx11-xcb1 \
-    libgbm1 \
-    && rm -rf /var/lib/apt/lists/*
-
-# Download dan install Google Chrome
-RUN curl -sS https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -o google-chrome.deb
-
-# Install Chrome dan perbaiki ketergantungan jika ada
-RUN dpkg -i google-chrome.deb || apt-get install -f -y
+    libasound2 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libgtk-3-0 \
+    google-chrome-stable
 
 # Install ChromeDriver
-RUN wget https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip
-RUN unzip chromedriver_linux64.zip
-RUN mv chromedriver /usr/local/bin/
-RUN chmod +x /usr/local/bin/chromedriver
+RUN wget -q -O - https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip | \
+    unzip -d /usr/local/bin
 
-# Instal dependensi Python
-WORKDIR /app
-COPY requirements.txt /app/
-RUN pip install -r requirements.txt
-
-# Copy aplikasi Anda
-COPY . /app/
-
-# Tentukan perintah untuk menjalankan aplikasi
-CMD ["python", "app.py"]
+# Set the environment variable for Chrome binary location
+ENV CHROME_BIN="/usr/bin/google-chrome-stable"
