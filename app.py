@@ -94,6 +94,7 @@ def start_blasting():
         return jsonify({"status": "error", "message": "Message cannot be empty."}), 400
 
     try:
+        # Membaca file CSV
         data = pd.read_csv(file_path, dtype={"NO HANDPHONE": str}).dropna(subset=["NO HANDPHONE"])
         data["NO HANDPHONE"] = data["NO HANDPHONE"].apply(lambda x: x.strip())
 
@@ -116,10 +117,15 @@ def start_blasting():
                 tombol_kirim.click()
                 sent_numbers.append(nomor)
                 last_sent_index += 1
-    try:
-    # kode yang mungkin menyebabkan error
-    except Exception as e:
-    print(f"An error occurred: {e}")
+            except Exception as e:
+                print(f"Error when sending message to {nomor}: {e}")
+                failed_numbers.append(nomor)
 
-    except Exception:
-    print("An error occurred")
+        return jsonify({"status": "success", "message": "Blast finished!"})
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return jsonify({"status": "error", "message": f"Failed to process the file: {e}"}), 500
+
+if __name__ == "__main__":
+    app.run(debug=True)
