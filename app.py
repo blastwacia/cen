@@ -144,4 +144,3 @@ if __name__ == "__main__":
 
 print("Chrome binary location:", os.popen('which google-chrome').read())
 print("ChromeDriver location:", os.popen('which chromedriver').read())
-
