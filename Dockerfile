@@ -19,8 +19,9 @@ RUN apt-get update && apt-get install -y \
 
 # Download dan install Google Chrome
 RUN curl -sS https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -o google-chrome.deb
-RUN dpkg -i google-chrome.deb
-RUN apt-get -y --fix-broken install
+
+# Install Chrome dan perbaiki ketergantungan jika ada
+RUN dpkg -i google-chrome.deb || apt-get install -f -y
 
 # Install ChromeDriver
 RUN wget https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip
