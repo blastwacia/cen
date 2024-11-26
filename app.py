@@ -19,8 +19,9 @@ UPLOAD_FOLDER = "uploads"
 ALLOWED_EXTENSIONS = {"csv"}
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
+# Check if the folder exists before creating it
 if not os.path.exists(UPLOAD_FOLDER):
-    os.mkdir(UPLOAD_FOLDER)
+    os.makedirs(UPLOAD_FOLDER)
 
 # Global Variables
 sent_numbers = []
