@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Blast</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+        }
+        #status {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        #qr-code {
+            margin-top: 20px;
+            display: none;
+        }
+        .btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WhatsApp Blast</h1>
+
+        <!-- File Upload -->
+        <h3>Upload File</h3>
+        <input type="file" id="fileInput" />
+        <button class="btn" onclick="uploadFile()">Upload</button>
+        <div id="status"></div>
+
+        <!-- Message Template -->
+        <h3>Message Template</h3>
+        <textarea id="messageTemplate" rows="5" cols="50"></textarea>
+
+        <!-- WhatsApp Login QR Code -->
+        <div id="qr-code">
+            <h3>Scan this QR code to login to WhatsApp</h3>
+            <img id="whatsappQR" src="" alt="QR Code" />
+        </div>
+
+        <!-- Start Blasting -->
+        <button class="btn" onclick="startBlasting()">Start Blasting</button>
+    </div>
+
+    <script>
+        // Upload file
+        function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const status = document.getElementById('status');
+            
+            if (fileInput.files.length === 0) {
+                status.textContent = "No file selected!";
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    status.textContent = "File uploaded successfully!";
+                    status.style.color = "green";
+                } else {
+                    status.textContent = "Upload failed: " + data.message;
+                    status.style.color = "red";
+                }
+            })
+            .catch(error => {
+                status.textContent = "Error during upload!";
+                status.style.color = "red";
+                console.error(error);
+            });
+        }
+
+        // Login to WhatsApp
+        function loginWhatsApp() {
+            fetch('/login')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    document.getElementById('qr-code').style.display = 'block';
+                    document.getElementById('whatsappQR').src = '/' + data.qr_code;
+                } else {
+                    alert("Error: " + data.message);
+                }
+            });
+        }
+
+        // Start the blasting process
+        function startBlasting() {
+            const fileInput = document.getElementById('fileInput');
+            const messageTemplate = document.getElementById('messageTemplate').value.trim();
+            
+            if (!fileInput.files.length) {
+                alert("Please upload a file first!");
+                return;
+            }
+
+            if (!messageTemplate) {
+                alert("Please provide a message template!");
+                return;
+            }
+
+            const filePath = fileInput.files[0].name;
+
+            const data = {
+                file_path: `/uploads/${filePath}`,
+                message: messageTemplate
+            };
+
+            fetch('/start', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    alert("Blasting completed successfully!");
+                } else {
+                    alert("Error: " + data.message);
+                }
+            })
+            .catch(error => {
+                alert("Error: " + error);
+                console.error(error);
+            });
+        }
+
+        // Automatically login and show QR
+        loginWhatsApp();
+    </script>
+</body>
+</html>
