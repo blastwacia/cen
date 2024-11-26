@@ -1,34 +1,45 @@
+# Gunakan image dasar yang sesuai
 FROM python:3.10-slim
 
-# Update apt-get dan install dependencies
+# Set direktori kerja
+WORKDIR /app
+
+# Install dependensi dasar
 RUN apt-get update && apt-get install -y \
-    curl \
     wget \
+    curl \
+    fonts-liberation \
+    libasound2 \
+    libnss3 \
     libx11-dev \
     libxcomposite-dev \
     libxrandr-dev \
     libgtk-3-0 \
-    libnss3 \
-    libasound2 \
-    fonts-liberation \
     xdg-utils \
-    unzip \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Download dan install Google Chrome
-RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -O google-chrome-stable_current_amd64.deb \
-    && dpkg -i google-chrome-stable_current_amd64.deb \
-    && apt-get -y --fix-broken install \
-    && rm google-chrome-stable_current_amd64.deb
+# Tambahkan kunci GPG dan repositori Google Chrome
+RUN curl -sS https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
+    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
+
+# Update dan install Google Chrome
+RUN apt-get update && apt-get install -y google-chrome-stable \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install ChromeDriver
-RUN wget https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip \
-    && unzip chromedriver_linux64.zip -d /usr/local/bin/ \
+RUN wget -O /usr/local/bin/chromedriver https://chromedriver.storage.googleapis.com/$(curl -sS https://chromedriver.storage.googleapis.com/LATEST_RELEASE)/chromedriver_linux64.zip \
+    && apt-get update && apt-get install -y unzip \
+    && unzip /usr/local/bin/chromedriver -d /usr/local/bin/ \
+    && chmod +x /usr/local/bin/chromedriver \
     && rm chromedriver_linux64.zip
 
-# Install required Python packages
-COPY requirements.txt /app/requirements.txt
-RUN pip install -r /app/requirements.txt
+# Salin aplikasi ke dalam container
+COPY . /app
 
-# Set working directory
-WORKDIR /app
+# Install dependensi Python
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Jalankan aplikasi
+CMD ["python", "app.py"]
