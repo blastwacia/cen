@@ -1,4 +1,4 @@
-# Gunakan base image yang ringan
+# Gunakan base image Debian slim
 FROM debian:bookworm-slim
 
 # Set direktori kerja
@@ -8,6 +8,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     wget \
     curl \
+    gnupg \
     fonts-liberation \
     libasound2 \
     libnss3 \
@@ -16,17 +17,19 @@ RUN apt-get update && apt-get install -y \
     libxrandr-dev \
     libgtk-3-0 \
     xdg-utils \
-    gnupg \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Tambahkan keyring untuk repositori Google Chrome
 RUN mkdir -p /etc/apt/keyrings \
-    && curl -fsSL https://dl-ssl.google.com/linux/linux_signing_key.pub -o /etc/apt/keyrings/google-chrome.gpg \
+    && curl -fsSL https://dl.google.com/linux/linux_signing_key.pub -o /etc/apt/keyrings/google-chrome.gpg \
     && chmod 644 /etc/apt/keyrings/google-chrome.gpg \
-    && echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
+    && echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | tee /etc/apt/sources.list.d/google-chrome.list
 
-# Perbarui repositori dan instal Google Chrome
+# Pastikan repositori dan keyring dikenali
+RUN apt-key list | grep -i "Google Inc" || echo "Google key not recognized"
+
+# Instal Google Chrome
 RUN apt-get update && apt-get install -y google-chrome-stable \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
@@ -35,4 +38,4 @@ RUN apt-get update && apt-get install -y google-chrome-stable \
 COPY . /app
 
 # Jalankan aplikasi
-CMD ["echo", "Chrome berhasil diinstal!"]
+CMD ["echo", "Google Chrome berhasil diinstal!"]
